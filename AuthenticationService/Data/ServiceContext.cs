@@ -1,10 +1,11 @@
 ﻿using AuthenticationService.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthenticationService.Data
 {
-    public class ServiceContext : IdentityDbContext<UserModel>
+    public class ServiceContext : IdentityDbContext<UserModel, IdentityRole<string>, string>
     {
         public DbSet<UserModel> User { get; set; }
 

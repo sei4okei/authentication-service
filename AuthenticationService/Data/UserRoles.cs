@@ -1,4 +1,6 @@
-﻿namespace AuthenticationService.Data
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace AuthenticationService.Data
 {
     public class UserRoles
     {
