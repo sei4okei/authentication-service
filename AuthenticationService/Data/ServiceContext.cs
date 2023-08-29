@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AuthenticationService.Data
 {
-    public class ServiceContext : IdentityDbContext<UserModel, IdentityRole<string>, string>
+    public class ServiceContext : IdentityDbContext/*<UserModel, UserRoles,  string>*/
     {
-        public DbSet<UserModel> User { get; set; }
+        //public DbSet<UserModel> User { get; set; }
 
         public ServiceContext(DbContextOptions<ServiceContext> options)
             : base(options)

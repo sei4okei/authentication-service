@@ -1,24 +1,19 @@
 ﻿using AuthenticationService.Data;
 using AuthenticationService.Models;
-using AuthenticationService.Models.DTOs;
 using AuthenticationService.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using NuGet.Packaging.Signing;
 
 namespace AuthenticationService.Services
 {
     public class AccountService : IAccountService
     {
-        private readonly UserManager<UserModel> _userManager;
-        private readonly SignInManager<UserModel> _signInManager;
-        private readonly ServiceContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ITokenService _tokenService;
 
-        public AccountService(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, ServiceContext context)
+        public AccountService(UserManager<IdentityUser> userManager, ITokenService tokenService)
         {
             _userManager = userManager;
-            _signInManager = signInManager;
-            _context = context;
+            _tokenService = tokenService;
         }
 
         public async Task<ResponseModel> Login(LoginModel model)
@@ -49,22 +44,25 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
+                //var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
 
-                if (!result.Succeeded)
-                {
-                    return new ResponseModel
-                    {
-                        Action = "Login",
-                        Code = "500",
-                        Error = "Internal server error"
-                    };
-                }
+                //if (!result.Succeeded)
+                //{
+                //    return new ResponseModel
+                //    {
+                //        Action = "Login",
+                //        Code = "500",
+                //        Error = "Internal server error"
+                //    };
+                //}
+
+                var token = _tokenService.CreateToken(user);
 
                 return new ResponseModel
                 {
                     Action = "Login",
-                    Code = "200"
+                    Code = "200",
+                    Token = token
                 };
             }
             catch (Exception)
@@ -94,14 +92,24 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                var user = new UserModel
+                var user = new IdentityUser
                 {
                     UserName = model.Login,
                     Email = model.Login
                 };
                 var isCreated = await _userManager.CreateAsync(user, model.Password);
 
-                if (isCreated.Succeeded) await _userManager.AddToRoleAsync(user, UserRoles.User);
+                if (!isCreated.Succeeded)
+                {
+                    return new ResponseModel
+                    {
+                        Action = "Registration",
+                        Code = "400",
+                        Error = "Incorrect password"
+                    };
+                }
+
+                await _userManager.AddToRoleAsync(user, UserRoles.User);
 
                 return new ResponseModel
                 {
