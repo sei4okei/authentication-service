@@ -1,5 +1,6 @@
 using AuthenticationService.Data;
 using AuthenticationService.Helpers;
+using AuthenticationService.Middleware;
 using AuthenticationService.Models;
 using AuthenticationService.Repository;
 using AuthenticationService.Services;
@@ -110,7 +111,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseMiddleware<JwtMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
