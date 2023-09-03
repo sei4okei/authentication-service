@@ -4,14 +4,14 @@ C использованием JWT
 ## Работа сервиса
 Сервис содержит два endpoint'a:
 1. Регистрация - http://localhost:8088/api/Account/register
-	![[Pasted image 20230903204312.png]]
+![Register](https://github.com/sei4okei/authentication-service/blob/docker/Pasted%20image%2020230903204312.png)]
 2. Вход - http://localhost:8088/api/Account/login
-	![[Pasted image 20230903204337.png]]
+![Login](https://github.com/sei4okei/authentication-service/blob/docker/Pasted%20image%2020230903204337.png)]
 
 Данные для подключения к PostgreSQL:
-DB: Users
-User: postgresql
-Password: postgres
+- DB: Users
+- User: postgresql
+- Password: postgres
 ## Запуск
 Для запуска необходимо:
 
