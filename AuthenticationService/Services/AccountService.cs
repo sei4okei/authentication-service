@@ -44,25 +44,14 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                //var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
-
-                //if (!result.Succeeded)
-                //{
-                //    return new ResponseModel
-                //    {
-                //        Action = "Login",
-                //        Code = "500",
-                //        Error = "Internal server error"
-                //    };
-                //}
-
                 var token = _tokenService.CreateToken(user);
 
                 return new ResponseModel
                 {
                     Action = "Login",
                     Code = "200",
-                    Token = token
+                    Token = token,
+                    User = user.Email
                 };
             }
             catch (Exception)
@@ -108,8 +97,6 @@ namespace AuthenticationService.Services
                         Error = "Incorrect password"
                     };
                 }
-
-                await _userManager.AddToRoleAsync(user, UserRoles.User);
 
                 return new ResponseModel
                 {

@@ -1,10 +1,7 @@
 ﻿using AuthenticationService.Models;
 using AuthenticationService.Models.DTOs;
-using AuthenticationService.Repository;
 using AuthenticationService.Services.Interfaces;
 using AutoMapper;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthenticationService.Controllers
@@ -15,13 +12,11 @@ namespace AuthenticationService.Controllers
     {
         private readonly IAccountService _accountService;
         private readonly IMapper _mapper;
-        private readonly IAccountRepository _accountRepository;
 
-        public AccountController(IAccountService accountService, IMapper mapper, IAccountRepository accountRepository)
+        public AccountController(IAccountService accountService, IMapper mapper)
         {
             _accountService = accountService;
             _mapper = mapper;
-            _accountRepository = accountRepository;
         }
 
         [HttpPost]
@@ -58,15 +53,6 @@ namespace AuthenticationService.Controllers
             }
 
             return Ok(resultDTO);
-        }
-
-        [HttpGet]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> GetAllAuthorized()
-        {
-            var result = await _accountRepository.GetAll();
-
-            return Ok(result);
         }
     }
 }
