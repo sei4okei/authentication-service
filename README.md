@@ -10,7 +10,7 @@ C использованием JWT
 
 Данные для подключения к PostgreSQL:
 - DB: Users
-- User: postgresql
+- User: postgres
 - Password: postgres
 ## Запуск
 Для запуска необходимо:
@@ -23,4 +23,14 @@ docker build . -t authenticationservice
 ```cmd
 docker-compose up
 ```
-3. Всё готово!
+3.  Вставить строку подключения в appsettings.json
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "User ID=postgres;Password=postgres;Server=localhost;Port=5433;Database=Users;IntegratedSecurity=true;Pooling=true"
+},
+```
+4.  Применить миграцию через консоль диспетчера пакетов
+```cmd
+Update-Database
+```
+5. Всё готово!
