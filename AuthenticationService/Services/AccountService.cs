@@ -2,6 +2,9 @@
 using AuthenticationService.Models;
 using AuthenticationService.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Newtonsoft.Json.Linq;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 
 namespace AuthenticationService.Services
 {
@@ -60,6 +63,38 @@ namespace AuthenticationService.Services
                 {
                     Action = "Login",
                     Code = "500",
+                    Error = "Internal server error"
+                };
+            }
+        }
+
+        public StatusModel ReadToken(string token)
+        {
+            try
+            {
+                if (token == null) return new StatusModel { Code = "400", Action = "Status", Error = "Empty token" };
+
+                var handler = new JwtSecurityTokenHandler();
+
+                var jwtSecurityToken = handler.ReadJwtToken(token);
+
+                var accountEmail = jwtSecurityToken.Claims.First(x => x.Type == "Login").Value;
+                var accountRole = jwtSecurityToken.Claims.First(x => x.Type == "Role").Value;
+
+                return new StatusModel
+                {
+                    Code = "200",
+                    Action = "Status",
+                    Role = accountRole,
+                    User = accountEmail
+                };
+            }
+            catch (Exception)
+            {
+                return new StatusModel
+                {
+                    Code = "500",
+                    Action = "Status",
                     Error = "Internal server error"
                 };
             }

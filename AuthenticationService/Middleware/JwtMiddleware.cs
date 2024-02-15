@@ -51,7 +51,7 @@ namespace AuthenticationService.Middleware
                 var jwtToken = (JwtSecurityToken)validatedToken;
                 var accountEmail = jwtToken.Claims.First(x => x.Type == "Login").Value;
 
-                var users = await _accountRepository.GetAll();
+                var users = _accountRepository.GetAll();
                 var user = users.FirstOrDefault(x => x.Email == accountEmail);
 
                 context.Items["User"] = user;
