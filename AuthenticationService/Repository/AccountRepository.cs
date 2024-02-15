@@ -25,9 +25,9 @@ namespace AuthenticationService.Repository
             return Save();
         }
 
-        public async Task<IEnumerable<IdentityUser>> GetAll()
+        public IEnumerable<IdentityUser> GetAll()
         {
-            return await _context.Users.ToListAsync();
+            return _context.Users.ToList();
         }
 
         public async Task<IdentityUser> GetById(string id)

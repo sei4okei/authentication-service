@@ -1,8 +1,10 @@
-﻿using AuthenticationService.Models;
+﻿using AuthenticationService.Middleware;
+using AuthenticationService.Models;
 using AuthenticationService.Models.DTOs;
 using AuthenticationService.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AuthenticationService.Controllers
 {
@@ -53,6 +55,15 @@ namespace AuthenticationService.Controllers
             }
 
             return Ok(resultDTO);
+        }
+
+        [HttpGet]
+        [Route("status")]
+        public async Task<IActionResult> Status([FromHeader] string Authorization)
+        {
+            var status = _accountService.ReadToken(Authorization);
+
+            return Ok(status);
         }
     }
 }
