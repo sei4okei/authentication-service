@@ -1,5 +1,6 @@
 ﻿using AuthenticationService.Models;
 using AuthenticationService.Repository;
+using AuthenticationService.Services;
 using AuthenticationService.Services.Interfaces;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -12,17 +13,20 @@ namespace AuthenticationService.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly IOptions<JwtModel> _options;
-        private readonly ITokenService _tokenService;
+        private ITokenService _tokenService;
+        private IAccountRepository _accountRepository;
 
-        public JwtMiddleware(RequestDelegate next, IOptions<JwtModel> options, ITokenService tokenService)
+        public JwtMiddleware(RequestDelegate next, IOptions<JwtModel> options)
         {
             _next = next;
             _options = options;
-            _tokenService = tokenService;
         }
 
-        public async Task Invoke(HttpContext context, IAccountRepository _accountRepository)
+        public async Task Invoke(HttpContext context, ITokenService tokenService, IAccountRepository accountRepository)
         {
+            _tokenService = tokenService;
+            _accountRepository = accountRepository;
+
             var token = context.Request.Headers["Authorization"].FirstOrDefault();
             var refreshToken = context.Request.Headers["Refresh"].FirstOrDefault();
 
@@ -30,13 +34,13 @@ namespace AuthenticationService.Middleware
             {
                 refreshToken = refreshToken.Replace("Bearer ", string.Empty);
                 token = token.Replace("Bearer ", string.Empty);
-                AttachAccountToContext(context, token, refreshToken, _accountRepository);
+                AttachAccountToContext(context, token, refreshToken);
             }
 
             await _next(context);
         }
 
-        public async void AttachAccountToContext(HttpContext context, string token, string refreshToken, IAccountRepository _accountRepository)
+        public async void AttachAccountToContext(HttpContext context, string token, string refreshToken)
         {
             try
             {
@@ -78,8 +82,13 @@ namespace AuthenticationService.Middleware
                         ValidAudience = _options.Value.Audience
                     }, out SecurityToken validatedToken);
 
-                    var jwtToken = (JwtSecurityToken)validatedToken;
-                    //var accessToken = _tokenService.CreateAccessToken()
+                    var user = await _accountRepository.GetByRefreshToken(refreshToken);
+                    var accessToken = await _tokenService.CreateAccessToken(user);
+                    context.Request.Headers["Authorization"] = accessToken;
+                    var newRefreshToken = await _tokenService.CreateRefreshToken(user);
+                    context.Request.Headers["Refresh"] = newRefreshToken;
+
+                    await Invoke(context, _tokenService, _accountRepository);
                 }
                 catch (Exception)
                 {

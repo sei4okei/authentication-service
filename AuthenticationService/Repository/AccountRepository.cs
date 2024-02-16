@@ -13,39 +13,44 @@ namespace AuthenticationService.Repository
         {
             _context = context;
         }
-        public bool Add(User user)
+        public async Task<bool> Add(User user)
         {
             _context.Users.Add(user);
-            return Save();
+            return await Save();
         }
 
-        public bool Delete(User user)
+        public async Task<bool> Delete(User user)
         {
             _context.Users.Remove(user);
-            return Save();
+            return await Save();
         }
 
-        public IEnumerable<IdentityUser> GetAll()
+        public IEnumerable<User> GetAll()
         {
             return _context.Users.ToList();
         }
 
-        public async Task<IdentityUser> GetById(string id)
+        public async Task<User> GetById(string id)
         {
             return await _context.Users.FirstOrDefaultAsync(d => d.Id == id);
         }
 
-        public async Task<IdentityUser> GetByIdNoTracking(string id)
+        public async Task<User> GetByIdNoTracking(string id)
         {
             return await _context.Users.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id);
         }
 
-        public bool Save() => _context.SaveChanges() > 0 ? true : false;
+        public async Task<User> GetByRefreshToken(string refreshToken)
+        {
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        }
 
-        public bool Update(User user)
+        public async Task<bool> Save() => await _context.SaveChangesAsync() > 0 ? true : false;
+
+        public async Task<bool> Update(User user)
         {
             _context.Users.Update(user);
-            return Save();
+            return await Save();
         }
     }
 }

@@ -18,11 +18,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddOptions();
 builder.Services.Configure<JwtModel>(builder.Configuration.GetSection("Jwt"));
-builder.Services.AddTransient<ITokenService, TokenService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -54,7 +53,7 @@ builder.Services.AddAuthentication(opt => {
         };
     });
 
-builder.Services.AddIdentity<IdentityUser, UserRoles>()
+builder.Services.AddIdentity<User, UserRoles>()
     .AddEntityFrameworkStores<ServiceContext>()
     .AddDefaultTokenProviders();
 
@@ -75,6 +74,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseMiddleware<JwtMiddleware>();
 //app.UseHttpsRedirection();
 

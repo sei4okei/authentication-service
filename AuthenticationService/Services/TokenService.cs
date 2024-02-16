@@ -1,6 +1,8 @@
 ﻿using AuthenticationService.Models;
+using AuthenticationService.Repository;
 using AuthenticationService.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,13 +14,15 @@ namespace AuthenticationService.Services
     public class TokenService : ITokenService
     {
         private readonly IOptions<JwtModel> _options;
+        private readonly IAccountRepository _accountRepository;
 
-        public TokenService(IOptions<JwtModel> options)
+        public TokenService(IOptions<JwtModel> options, IAccountRepository accountRepository)
         {
             _options = options;
+            _accountRepository = accountRepository;
         }
 
-        public string CreateAccessToken(IdentityUser user)
+        public async Task<string> CreateAccessToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
@@ -42,10 +46,15 @@ namespace AuthenticationService.Services
             };
 
             var token = jwtTokenHandler.CreateToken(tokenDescriptor);
-            return jwtTokenHandler.WriteToken(token);
+            var stringToken = jwtTokenHandler.WriteToken(token);
+
+            user.AccessToken = stringToken;
+            await _accountRepository.Update(user);
+
+            return stringToken;
         }
 
-        public string CreateRefreshToken(IdentityUser user)
+        public async Task<string> CreateRefreshToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
@@ -65,7 +74,12 @@ namespace AuthenticationService.Services
             };
 
             var token = jwtTokenHandler.CreateToken(tokenDescriptor);
-            return jwtTokenHandler.WriteToken(token);
+            var stringToken = jwtTokenHandler.WriteToken(token);
+
+            user.RefreshToken = stringToken;
+            await _accountRepository.Update(user);
+
+            return stringToken;
         }
     }
 }

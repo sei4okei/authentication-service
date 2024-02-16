@@ -10,10 +10,10 @@ namespace AuthenticationService.Services
 {
     public class AccountService : IAccountService
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
 
-        public AccountService(UserManager<IdentityUser> userManager, ITokenService tokenService)
+        public AccountService(UserManager<User> userManager, ITokenService tokenService)
         {
             _userManager = userManager;
             _tokenService = tokenService;
@@ -47,13 +47,15 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                var token = _tokenService.CreateAccessToken(user);
+                var token = await _tokenService.CreateAccessToken(user);
+                var refreshToken = await _tokenService.CreateRefreshToken(user);
 
                 return new ResponseModel
                 {
                     Action = "Login",
                     Code = "200",
                     Token = token,
+                    RefreshToken = refreshToken,
                     User = user.Email
                 };
             }
@@ -116,7 +118,7 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                var user = new IdentityUser
+                var user = new User
                 {
                     UserName = model.Login,
                     Email = model.Login
