@@ -1,4 +1,5 @@
 ﻿using AuthenticationService.Models;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AuthenticationService.Services.Interfaces
 {
@@ -6,6 +7,7 @@ namespace AuthenticationService.Services.Interfaces
     {
         Task<ResponseModel> Register(RegisterModel model);
         Task<ResponseModel> Login(LoginModel model);
+        StatusModel ReadToken(string token);
 
     }
 }
