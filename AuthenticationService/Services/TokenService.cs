@@ -18,20 +18,45 @@ namespace AuthenticationService.Services
             _options = options;
         }
 
-        public string CreateToken(IdentityUser user)
+        public string CreateAccessToken(IdentityUser user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
             var claims = new List<Claim>
             {
+
                 new Claim("Login", user.Email),
-                new Claim("Role", "user")
+                new Claim("Role", "user"),
+                new Claim("Type", "access")
 
             };
             var tokenDescriptor = new SecurityTokenDescriptor()
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.Add(TimeSpan.FromMinutes(_options.Value.Expire)),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Value.Secret)),
+                    SecurityAlgorithms.HmacSha256),
+                Issuer = _options.Value.Issuer,
+                Audience = _options.Value.Audience
+            };
+
+            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
+            return jwtTokenHandler.WriteToken(token);
+        }
+
+        public string CreateRefreshToken(IdentityUser user)
+        {
+            var jwtTokenHandler = new JwtSecurityTokenHandler();
+
+            var claims = new List<Claim>
+            {
+                new Claim("Type", "refresh")
+            };
+            var tokenDescriptor = new SecurityTokenDescriptor()
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.Add(TimeSpan.FromMinutes(10)),
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Value.Secret)),
                     SecurityAlgorithms.HmacSha256),

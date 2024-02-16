@@ -13,13 +13,13 @@ namespace AuthenticationService.Repository
         {
             _context = context;
         }
-        public bool Add(IdentityUser user)
+        public bool Add(User user)
         {
             _context.Users.Add(user);
             return Save();
         }
 
-        public bool Delete(IdentityUser user)
+        public bool Delete(User user)
         {
             _context.Users.Remove(user);
             return Save();
@@ -42,7 +42,7 @@ namespace AuthenticationService.Repository
 
         public bool Save() => _context.SaveChanges() > 0 ? true : false;
 
-        public bool Update(IdentityUser user)
+        public bool Update(User user)
         {
             _context.Users.Update(user);
             return Save();

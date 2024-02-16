@@ -6,6 +6,7 @@ namespace AuthenticationService.Services.Interfaces
 {
     public interface ITokenService
     {
-        public string CreateToken(IdentityUser user);
+        public string CreateAccessToken(IdentityUser user);
+        public string CreateRefreshToken(IdentityUser user);
     }
 }

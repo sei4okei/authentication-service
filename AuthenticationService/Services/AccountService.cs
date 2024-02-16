@@ -44,7 +44,7 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                var token = _tokenService.CreateToken(user);
+                var token = _tokenService.CreateAccessToken(user);
 
                 return new ResponseModel
                 {
