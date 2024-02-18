@@ -57,11 +57,23 @@ namespace AuthenticationService.Controllers
             return Ok(resultDTO);
         }
 
+        [HttpPost]
+        [Route("refresh")]
+        public async Task<IActionResult> Refresh([FromHeader] string Refresh)
+        {
+            if (Refresh == null) return BadRequest(new ResponseModel { Action = "Refresh", Code = "400", Error = "Empty token" });
+
+            var responseModel = await _accountService.Refresh(Refresh);
+
+            return Ok(responseModel);
+        }
+
         [HttpGet]
         [Route("status")]
+        [Authorize]
         public async Task<IActionResult> Status([FromHeader] string Authorization)
         {
-            var status = _accountService.ReadToken(Authorization);
+            var status = _accountService.Status(Authorization);
 
             return Ok(status);
         }

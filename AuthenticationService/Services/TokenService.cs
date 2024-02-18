@@ -14,15 +14,22 @@ namespace AuthenticationService.Services
     public class TokenService : ITokenService
     {
         private readonly IOptions<JwtModel> _options;
-        private readonly IAccountRepository _accountRepository;
 
-        public TokenService(IOptions<JwtModel> options, IAccountRepository accountRepository)
+        public TokenService(IOptions<JwtModel> options)
         {
             _options = options;
-            _accountRepository = accountRepository;
         }
 
-        public async Task<string> CreateAccessToken(User user)
+        public IEnumerable<Claim> ReadClaims(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+
+            var jwtSecurityToken = handler.ReadJwtToken(token);
+
+            return jwtSecurityToken.Claims.ToList();
+        }
+
+        public string CreateAccessToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
@@ -49,12 +56,11 @@ namespace AuthenticationService.Services
             var stringToken = jwtTokenHandler.WriteToken(token);
 
             user.AccessToken = stringToken;
-            await _accountRepository.Update(user);
 
             return stringToken;
         }
 
-        public async Task<string> CreateRefreshToken(User user)
+        public string CreateRefreshToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
@@ -77,7 +83,6 @@ namespace AuthenticationService.Services
             var stringToken = jwtTokenHandler.WriteToken(token);
 
             user.RefreshToken = stringToken;
-            await _accountRepository.Update(user);
 
             return stringToken;
         }

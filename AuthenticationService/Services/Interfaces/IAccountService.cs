@@ -7,7 +7,7 @@ namespace AuthenticationService.Services.Interfaces
     {
         Task<ResponseModel> Register(RegisterModel model);
         Task<ResponseModel> Login(LoginModel model);
-        StatusModel ReadToken(string token);
-
+        Task<ResponseModel> Refresh(string refreshToken);
+        StatusModel Status(string token);
     }
 }

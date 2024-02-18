@@ -1,10 +1,12 @@
 ﻿using AuthenticationService.Data;
 using AuthenticationService.Models;
+using AuthenticationService.Repository;
 using AuthenticationService.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AuthenticationService.Services
 {
@@ -12,11 +14,13 @@ namespace AuthenticationService.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
+        private readonly IAccountRepository _accountRepository;
 
-        public AccountService(UserManager<User> userManager, ITokenService tokenService)
+        public AccountService(UserManager<User> userManager, ITokenService tokenService, IAccountRepository accountRepository)
         {
             _userManager = userManager;
             _tokenService = tokenService;
+            _accountRepository = accountRepository;
         }
 
         public async Task<ResponseModel> Login(LoginModel model)
@@ -47,8 +51,8 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                var token = await _tokenService.CreateAccessToken(user);
-                var refreshToken = await _tokenService.CreateRefreshToken(user);
+                var token = _tokenService.CreateAccessToken(user);
+                var refreshToken = _tokenService.CreateRefreshToken(user);
 
                 return new ResponseModel
                 {
@@ -70,18 +74,16 @@ namespace AuthenticationService.Services
             }
         }
 
-        public StatusModel ReadToken(string token)
+        public StatusModel Status(string token)
         {
             try
             {
                 if (token == null) return new StatusModel { Code = "400", Action = "Status", Error = "Empty token" };
 
-                var handler = new JwtSecurityTokenHandler();
+                var claims = _tokenService.ReadClaims(token);
 
-                var jwtSecurityToken = handler.ReadJwtToken(token);
-
-                var accountEmail = jwtSecurityToken.Claims.First(x => x.Type == "Login").Value;
-                var accountRole = jwtSecurityToken.Claims.First(x => x.Type == "Role").Value;
+                var accountRole = claims.FirstOrDefault(c => c.Type == "Role").Value;
+                var accountEmail = claims.FirstOrDefault(c => c.Type == "Login").Value;
 
                 return new StatusModel
                 {
@@ -150,6 +152,41 @@ namespace AuthenticationService.Services
                     Error = "Internal server error"
                 };
             }
+        }
+        //TO-DO проверить refresh token на валидность
+        //Просмотреть код - почистить от мусора
+        public async Task<ResponseModel> Refresh(string token)
+        {
+            if (token == null) return new ResponseModel { Code = "400", Action = "Refresh", Error = "Empty token" };
+
+            var user = await _accountRepository.GetByRefreshToken(token);
+
+            if (user == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty user" };
+
+            var accessToken = _tokenService.CreateAccessToken(user);
+
+            if (accessToken == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty access token" };
+
+            user.AccessToken = accessToken;
+
+            var refreshToken = _tokenService.CreateRefreshToken(user);
+
+            if (refreshToken == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty refresh token" };
+
+            user.RefreshToken = refreshToken;
+
+            _accountRepository.Update(user);
+            var result = _accountRepository.Save();
+
+            if (result == false) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Can't save tokens in db" };
+
+            return new ResponseModel
+            {
+                Code = "200",
+                Action = "Refresh",
+                Token = accessToken,
+                RefreshToken = refreshToken
+            };  
         }
     }
 }

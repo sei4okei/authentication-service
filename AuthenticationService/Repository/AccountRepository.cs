@@ -13,16 +13,16 @@ namespace AuthenticationService.Repository
         {
             _context = context;
         }
-        public async Task<bool> Add(User user)
+        public bool Add(User user)
         {
             _context.Users.Add(user);
-            return await Save();
+            return Save();
         }
 
-        public async Task<bool> Delete(User user)
+        public bool Delete(User user)
         {
             _context.Users.Remove(user);
-            return await Save();
+            return Save();
         }
 
         public IEnumerable<User> GetAll()
@@ -45,12 +45,11 @@ namespace AuthenticationService.Repository
             return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
         }
 
-        public async Task<bool> Save() => await _context.SaveChangesAsync() > 0 ? true : false;
+        public bool Save() => _context.SaveChanges() > 0 ? true : false;
 
-        public async Task<bool> Update(User user)
+        public void Update(User user)
         {
             _context.Users.Update(user);
-            return await Save();
         }
     }
 }

@@ -2,6 +2,7 @@
 using AuthenticationService.Repository;
 using AuthenticationService.Services;
 using AuthenticationService.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,7 +14,6 @@ namespace AuthenticationService.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly IOptions<JwtModel> _options;
-        private ITokenService _tokenService;
         private IAccountRepository _accountRepository;
 
         public JwtMiddleware(RequestDelegate next, IOptions<JwtModel> options)
@@ -22,25 +22,23 @@ namespace AuthenticationService.Middleware
             _options = options;
         }
 
-        public async Task Invoke(HttpContext context, ITokenService tokenService, IAccountRepository accountRepository)
+        public async Task Invoke(HttpContext context, IAccountRepository accountRepository)
         {
-            _tokenService = tokenService;
             _accountRepository = accountRepository;
 
             var token = context.Request.Headers["Authorization"].FirstOrDefault();
             var refreshToken = context.Request.Headers["Refresh"].FirstOrDefault();
 
-            if (token != null || refreshToken != null)
+            if (token != null)
             {
-                refreshToken = refreshToken.Replace("Bearer ", string.Empty);
                 token = token.Replace("Bearer ", string.Empty);
-                AttachAccountToContext(context, token, refreshToken);
+                await AttachAccountToContext(context, token, refreshToken);
             }
 
             await _next(context);
         }
 
-        public async void AttachAccountToContext(HttpContext context, string token, string refreshToken)
+        public async Task AttachAccountToContext(HttpContext context, string token, string refreshToken)
         {
             try
             {
@@ -67,33 +65,7 @@ namespace AuthenticationService.Middleware
             }
             catch (Exception)
             {
-                try
-                {
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    var key = Encoding.UTF8.GetBytes(_options.Value.Secret);
-                    tokenHandler.ValidateToken(refreshToken, new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ClockSkew = TimeSpan.Zero,
-                        ValidIssuer = _options.Value.Issuer,
-                        ValidAudience = _options.Value.Audience
-                    }, out SecurityToken validatedToken);
-
-                    var user = await _accountRepository.GetByRefreshToken(refreshToken);
-                    var accessToken = await _tokenService.CreateAccessToken(user);
-                    context.Request.Headers["Authorization"] = accessToken;
-                    var newRefreshToken = await _tokenService.CreateRefreshToken(user);
-                    context.Request.Headers["Refresh"] = newRefreshToken;
-
-                    await Invoke(context, _tokenService, _accountRepository);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                await context.Response.WriteAsJsonAsync(new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized });
             }
         }
     }
