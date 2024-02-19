@@ -45,6 +45,11 @@ namespace AuthenticationService.Repository
             return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
         }
 
+        public async Task<User> GetByAccessToken(string accessToken)
+        {
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.AccessToken == accessToken);
+        }
+
         public bool Save() => _context.SaveChanges() > 0 ? true : false;
 
         public void Update(User user)

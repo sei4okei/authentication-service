@@ -52,7 +52,20 @@ namespace AuthenticationService.Services
                 }
 
                 var token = _tokenService.CreateAccessToken(user);
+
+                if (token == null) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't create access token" };
+
                 var refreshToken = _tokenService.CreateRefreshToken(user);
+
+                if (refreshToken == null) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't create refresh token" };
+
+                user.AccessToken = token;
+                user.RefreshToken = refreshToken;
+
+                _accountRepository.Update(user);
+                var result = _accountRepository.Save();
+
+                if (result == false) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't save tokens in db" };
 
                 return new ResponseModel
                 {
@@ -153,11 +166,14 @@ namespace AuthenticationService.Services
                 };
             }
         }
-        //TO-DO проверить refresh token на валидность
-        //Просмотреть код - почистить от мусора
+
         public async Task<ResponseModel> Refresh(string token)
         {
             if (token == null) return new ResponseModel { Code = "400", Action = "Refresh", Error = "Empty token" };
+
+            var validatedToken = _tokenService.ValidateToken(token);
+
+            if (validatedToken == null) return new ResponseModel { Code = "400", Action = "Refresh", Error = "Outdated token" };
 
             var user = await _accountRepository.GetByRefreshToken(token);
 

@@ -15,6 +15,7 @@ namespace AuthenticationService.Middleware
         private readonly RequestDelegate _next;
         private readonly IOptions<JwtModel> _options;
         private IAccountRepository _accountRepository;
+        private ITokenService _tokenService;
 
         public JwtMiddleware(RequestDelegate next, IOptions<JwtModel> options)
         {
@@ -22,40 +23,34 @@ namespace AuthenticationService.Middleware
             _options = options;
         }
 
-        public async Task Invoke(HttpContext context, IAccountRepository accountRepository)
+        public async Task Invoke(HttpContext context, IAccountRepository accountRepository, ITokenService tokenService)
         {
             _accountRepository = accountRepository;
+            _tokenService = tokenService;
 
             var token = context.Request.Headers["Authorization"].FirstOrDefault();
-            var refreshToken = context.Request.Headers["Refresh"].FirstOrDefault();
 
             if (token != null)
             {
                 token = token.Replace("Bearer ", string.Empty);
-                await AttachAccountToContext(context, token, refreshToken);
+                await AttachAccountToContext(context, token);
             }
 
             await _next(context);
         }
 
-        public async Task AttachAccountToContext(HttpContext context, string token, string refreshToken)
+        public async Task AttachAccountToContext(HttpContext context, string token)
         {
-            try
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_options.Value.Secret);
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ClockSkew = TimeSpan.Zero,
-                    ValidIssuer = _options.Value.Issuer,
-                    ValidAudience = _options.Value.Audience
-                }, out SecurityToken validatedToken);
+            var jwtToken = _tokenService.ValidateToken(token);
+            User tokenInDB = null;
 
-                var jwtToken = (JwtSecurityToken)validatedToken;
+            if (jwtToken != null)
+            {
+                tokenInDB = await _accountRepository.GetByAccessToken(token);
+            }
+
+            if (tokenInDB != null) 
+            {
                 var accountEmail = jwtToken.Claims.First(x => x.Type == "Login").Value;
 
                 var users = _accountRepository.GetAll();
@@ -63,7 +58,7 @@ namespace AuthenticationService.Middleware
 
                 context.Items["User"] = user;
             }
-            catch (Exception)
+            else
             {
                 await context.Response.WriteAsJsonAsync(new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized });
             }

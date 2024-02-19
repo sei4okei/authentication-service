@@ -86,5 +86,31 @@ namespace AuthenticationService.Services
 
             return stringToken;
         }
+
+        public JwtSecurityToken ValidateToken(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_options.Value.Secret);
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ClockSkew = TimeSpan.Zero,
+                    ValidIssuer = _options.Value.Issuer,
+                    ValidAudience = _options.Value.Audience
+                }, out SecurityToken validatedToken);
+
+                return (JwtSecurityToken)validatedToken;
+
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 }

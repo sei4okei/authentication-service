@@ -31,10 +31,7 @@ namespace AuthenticationService.Controllers
 
             var resultDTO = _mapper.Map<ResponseDTO>(result);
 
-            if (result.Error != null)
-            {
-                return BadRequest(resultDTO);
-            }
+            if (result.Error != null) return BadRequest(resultDTO);
 
             return Ok(resultDTO);
         }
@@ -49,10 +46,7 @@ namespace AuthenticationService.Controllers
 
             var resultDTO = _mapper.Map<ResponseDTO>(result);
 
-            if (result.Error != null)
-            {
-                return BadRequest(resultDTO);
-            }
+            if (result.Error != null) return BadRequest(resultDTO);
 
             return Ok(resultDTO);
         }
@@ -65,6 +59,8 @@ namespace AuthenticationService.Controllers
 
             var responseModel = await _accountService.Refresh(Refresh);
 
+            if (responseModel.Error != null) return BadRequest(responseModel);
+
             return Ok(responseModel);
         }
 
@@ -74,6 +70,8 @@ namespace AuthenticationService.Controllers
         public async Task<IActionResult> Status([FromHeader] string Authorization)
         {
             var status = _accountService.Status(Authorization);
+
+            if (status.Error != null) return BadRequest(status);
 
             return Ok(status);
         }

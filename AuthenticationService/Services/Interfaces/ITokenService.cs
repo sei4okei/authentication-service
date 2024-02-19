@@ -7,8 +7,9 @@ namespace AuthenticationService.Services.Interfaces
 {
     public interface ITokenService
     {
-        public string CreateAccessToken(User user);
-        public string CreateRefreshToken(User user);
-        public IEnumerable<Claim> ReadClaims(string token);
+        string CreateAccessToken(User user);
+        string CreateRefreshToken(User user);
+        IEnumerable<Claim> ReadClaims(string token);
+        JwtSecurityToken ValidateToken(string token);
     }
 }
