@@ -1,12 +1,15 @@
 ﻿using AuthenticationService.Models;
 using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace AuthenticationService.Services.Interfaces
 {
     public interface ITokenService
     {
-        public string CreateAccessToken(IdentityUser user);
-        public string CreateRefreshToken(IdentityUser user);
+        string CreateAccessToken(User user);
+        string CreateRefreshToken(User user);
+        IEnumerable<Claim> ReadClaims(string token);
+        JwtSecurityToken ValidateToken(string token);
     }
 }

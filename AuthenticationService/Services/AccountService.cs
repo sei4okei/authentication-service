@@ -1,22 +1,26 @@
 ﻿using AuthenticationService.Data;
 using AuthenticationService.Models;
+using AuthenticationService.Repository;
 using AuthenticationService.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AuthenticationService.Services
 {
     public class AccountService : IAccountService
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
+        private readonly IAccountRepository _accountRepository;
 
-        public AccountService(UserManager<IdentityUser> userManager, ITokenService tokenService)
+        public AccountService(UserManager<User> userManager, ITokenService tokenService, IAccountRepository accountRepository)
         {
             _userManager = userManager;
             _tokenService = tokenService;
+            _accountRepository = accountRepository;
         }
 
         public async Task<ResponseModel> Login(LoginModel model)
@@ -49,11 +53,26 @@ namespace AuthenticationService.Services
 
                 var token = _tokenService.CreateAccessToken(user);
 
+                if (token == null) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't create access token" };
+
+                var refreshToken = _tokenService.CreateRefreshToken(user);
+
+                if (refreshToken == null) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't create refresh token" };
+
+                user.AccessToken = token;
+                user.RefreshToken = refreshToken;
+
+                _accountRepository.Update(user);
+                var result = _accountRepository.Save();
+
+                if (result == false) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't save tokens in db" };
+
                 return new ResponseModel
                 {
                     Action = "Login",
                     Code = "200",
                     Token = token,
+                    RefreshToken = refreshToken,
                     User = user.Email
                 };
             }
@@ -68,18 +87,16 @@ namespace AuthenticationService.Services
             }
         }
 
-        public StatusModel ReadToken(string token)
+        public StatusModel Status(string token)
         {
             try
             {
                 if (token == null) return new StatusModel { Code = "400", Action = "Status", Error = "Empty token" };
 
-                var handler = new JwtSecurityTokenHandler();
+                var claims = _tokenService.ReadClaims(token);
 
-                var jwtSecurityToken = handler.ReadJwtToken(token);
-
-                var accountEmail = jwtSecurityToken.Claims.First(x => x.Type == "Login").Value;
-                var accountRole = jwtSecurityToken.Claims.First(x => x.Type == "Role").Value;
+                var accountRole = claims.FirstOrDefault(c => c.Type == "Role").Value;
+                var accountEmail = claims.FirstOrDefault(c => c.Type == "Login").Value;
 
                 return new StatusModel
                 {
@@ -116,7 +133,7 @@ namespace AuthenticationService.Services
                     };
                 }
 
-                var user = new IdentityUser
+                var user = new User
                 {
                     UserName = model.Login,
                     Email = model.Login
@@ -148,6 +165,44 @@ namespace AuthenticationService.Services
                     Error = "Internal server error"
                 };
             }
+        }
+
+        public async Task<ResponseModel> Refresh(string token)
+        {
+            if (token == null) return new ResponseModel { Code = "400", Action = "Refresh", Error = "Empty token" };
+
+            var validatedToken = _tokenService.ValidateToken(token);
+
+            if (validatedToken == null) return new ResponseModel { Code = "400", Action = "Refresh", Error = "Outdated token" };
+
+            var user = await _accountRepository.GetByRefreshToken(token);
+
+            if (user == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty user" };
+
+            var accessToken = _tokenService.CreateAccessToken(user);
+
+            if (accessToken == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty access token" };
+
+            user.AccessToken = accessToken;
+
+            var refreshToken = _tokenService.CreateRefreshToken(user);
+
+            if (refreshToken == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty refresh token" };
+
+            user.RefreshToken = refreshToken;
+
+            _accountRepository.Update(user);
+            var result = _accountRepository.Save();
+
+            if (result == false) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Can't save tokens in db" };
+
+            return new ResponseModel
+            {
+                Code = "200",
+                Action = "Refresh",
+                Token = accessToken,
+                RefreshToken = refreshToken
+            };  
         }
     }
 }

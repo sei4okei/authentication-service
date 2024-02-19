@@ -25,27 +25,36 @@ namespace AuthenticationService.Repository
             return Save();
         }
 
-        public IEnumerable<IdentityUser> GetAll()
+        public IEnumerable<User> GetAll()
         {
             return _context.Users.ToList();
         }
 
-        public async Task<IdentityUser> GetById(string id)
+        public async Task<User> GetById(string id)
         {
             return await _context.Users.FirstOrDefaultAsync(d => d.Id == id);
         }
 
-        public async Task<IdentityUser> GetByIdNoTracking(string id)
+        public async Task<User> GetByIdNoTracking(string id)
         {
             return await _context.Users.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id);
         }
 
+        public async Task<User> GetByRefreshToken(string refreshToken)
+        {
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        }
+
+        public async Task<User> GetByAccessToken(string accessToken)
+        {
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.AccessToken == accessToken);
+        }
+
         public bool Save() => _context.SaveChanges() > 0 ? true : false;
 
-        public bool Update(User user)
+        public void Update(User user)
         {
             _context.Users.Update(user);
-            return Save();
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using AuthenticationService.Models;
+using AuthenticationService.Repository;
 using AuthenticationService.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,7 +20,16 @@ namespace AuthenticationService.Services
             _options = options;
         }
 
-        public string CreateAccessToken(IdentityUser user)
+        public IEnumerable<Claim> ReadClaims(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+
+            var jwtSecurityToken = handler.ReadJwtToken(token);
+
+            return jwtSecurityToken.Claims.ToList();
+        }
+
+        public string CreateAccessToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
@@ -42,10 +53,14 @@ namespace AuthenticationService.Services
             };
 
             var token = jwtTokenHandler.CreateToken(tokenDescriptor);
-            return jwtTokenHandler.WriteToken(token);
+            var stringToken = jwtTokenHandler.WriteToken(token);
+
+            user.AccessToken = stringToken;
+
+            return stringToken;
         }
 
-        public string CreateRefreshToken(IdentityUser user)
+        public string CreateRefreshToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
@@ -65,7 +80,37 @@ namespace AuthenticationService.Services
             };
 
             var token = jwtTokenHandler.CreateToken(tokenDescriptor);
-            return jwtTokenHandler.WriteToken(token);
+            var stringToken = jwtTokenHandler.WriteToken(token);
+
+            user.RefreshToken = stringToken;
+
+            return stringToken;
+        }
+
+        public JwtSecurityToken ValidateToken(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_options.Value.Secret);
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ClockSkew = TimeSpan.Zero,
+                    ValidIssuer = _options.Value.Issuer,
+                    ValidAudience = _options.Value.Audience
+                }, out SecurityToken validatedToken);
+
+                return (JwtSecurityToken)validatedToken;
+
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
 }
