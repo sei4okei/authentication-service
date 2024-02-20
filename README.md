@@ -35,4 +35,9 @@ docker-compose up
 ```cmd
 Update-Database
 ```
-5. Всё готово!
+5. Убрать строку подключения
+```json
+"ConnectionStrings": {
+  "DefaultConnection": ""
+},
+```
