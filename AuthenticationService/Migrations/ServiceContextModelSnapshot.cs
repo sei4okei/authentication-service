@@ -31,7 +31,6 @@ namespace AuthenticationService.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("AccessToken")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -69,7 +68,6 @@ namespace AuthenticationService.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("RefreshToken")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("SecurityStamp")
