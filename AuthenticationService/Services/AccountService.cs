@@ -1,7 +1,10 @@
 ﻿using AuthenticationService.Data;
+using AuthenticationService.Exceptions;
 using AuthenticationService.Models;
+using AuthenticationService.Models.DTOs;
 using AuthenticationService.Repository;
 using AuthenticationService.Services.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,188 +18,126 @@ namespace AuthenticationService.Services
         private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
         private readonly IAccountRepository _accountRepository;
+        private readonly IMapper _mapper;
 
-        public AccountService(UserManager<User> userManager, ITokenService tokenService, IAccountRepository accountRepository)
+        public AccountService(UserManager<User> userManager, ITokenService tokenService, IAccountRepository accountRepository, IMapper mapper)
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _accountRepository = accountRepository;
+            _mapper = mapper;
         }
 
-        public async Task<ResponseModel> Login(LoginModel model)
+        public async Task<ResponseDTO> Login(LoginDTO loginRequest)
         {
-            try
+            var model = _mapper.Map<LoginModel>(loginRequest);
+
+            var user = await _userManager.FindByEmailAsync(model.Login);
+
+            if (user == null) throw new IncorrectInputException("Login or password entered incorrectly");
+
+            var isPasswordCorrect = await _userManager.CheckPasswordAsync(user, model.Password);
+
+            if (!isPasswordCorrect) throw new IncorrectInputException("Login or password entered incorrectly");
+
+            var token = _tokenService.CreateAccessToken(user);
+
+            if (token == null) throw new CreateTokenException("access", "Can't create token");
+
+            var refreshToken = _tokenService.CreateRefreshToken(user);
+
+            if (refreshToken == null) throw new CreateTokenException("refresh", "Can't create token");
+
+            user.AccessToken = token;
+            user.RefreshToken = refreshToken;
+
+            _accountRepository.Update(user);
+            var result = _accountRepository.Save();
+
+            if (result == false) throw new SaveDbException("Can't save tokens in db");
+
+            return new ResponseDTO
             {
-                var user = await _userManager.FindByEmailAsync(model.Login);
-
-                if (user == null)
-                {
-                    return new ResponseModel
-                    {
-                        Action = "Login",
-                        Code = "400",
-                        Error = "Login or password entered incorrectly"
-                    };
-                }
-
-                var isPasswordCorrect = await _userManager.CheckPasswordAsync(user, model.Password);
-
-                if (!isPasswordCorrect)
-                {
-                    return new ResponseModel
-                    {
-                        Action = "Login",
-                        Code = "400",
-                        Error = "Login or password entered incorrectly"
-                    };
-                }
-
-                var token = _tokenService.CreateAccessToken(user);
-
-                if (token == null) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't create access token" };
-
-                var refreshToken = _tokenService.CreateRefreshToken(user);
-
-                if (refreshToken == null) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't create refresh token" };
-
-                user.AccessToken = token;
-                user.RefreshToken = refreshToken;
-
-                _accountRepository.Update(user);
-                var result = _accountRepository.Save();
-
-                if (result == false) return new ResponseModel { Action = "Login", Code = "500", Error = "Can't save tokens in db" };
-
-                return new ResponseModel
-                {
-                    Action = "Login",
-                    Code = "200",
-                    Token = token,
-                    RefreshToken = refreshToken,
-                    User = user.Email
-                };
-            }
-            catch (Exception)
-            {
-                return new ResponseModel
-                {
-                    Action = "Login",
-                    Code = "500",
-                    Error = "Internal server error"
-                };
-            }
+                Action = "Login",
+                Code = "200",
+                Token = token,
+                RefreshToken = refreshToken,
+                User = user.Email
+            };
         }
 
-        public StatusModel Status(string token)
+        public StatusDTO Status(string token)
         {
-            try
+            if (token == null) throw new EmptyTokenException("access", "Empty token");
+
+            var claims = _tokenService.ReadClaims(token);
+
+            var accountRole = claims.FirstOrDefault(c => c.Type == "Role").Value;
+            var accountEmail = claims.FirstOrDefault(c => c.Type == "Login").Value;
+
+            return new StatusDTO
             {
-                if (token == null) return new StatusModel { Code = "400", Action = "Status", Error = "Empty token" };
-
-                var claims = _tokenService.ReadClaims(token);
-
-                var accountRole = claims.FirstOrDefault(c => c.Type == "Role").Value;
-                var accountEmail = claims.FirstOrDefault(c => c.Type == "Login").Value;
-
-                return new StatusModel
-                {
-                    Code = "200",
-                    Action = "Status",
-                    Role = accountRole,
-                    User = accountEmail
-                };
-            }
-            catch (Exception)
-            {
-                return new StatusModel
-                {
-                    Code = "500",
-                    Action = "Status",
-                    Error = "Internal server error"
-                };
-            }
+                Code = "200",
+                Action = "Status",
+                Role = accountRole,
+                User = accountEmail
+            };
         }
 
-        public async Task<ResponseModel> Register(RegisterModel model)
+        public async Task<ResponseDTO> Register(RegisterDTO registerRequest)
         {
-            try
+            var model = _mapper.Map<RegisterModel>(registerRequest);
+
+            var exist = await _userManager.FindByEmailAsync(model.Login);
+
+            if (exist != null) throw new LoginExistException("User with that login exist");
+
+            var user = new User
             {
-                var exist = await _userManager.FindByEmailAsync(model.Login);
+                UserName = model.Login,
+                Email = model.Login
+            };
+            var isCreated = await _userManager.CreateAsync(user, model.Password);
 
-                if (exist != null)
-                {
-                    return new ResponseModel
-                    {
-                        Action = "Registration",
-                        Code = "400",
-                        Error = "User with that login exist"
-                    };
-                }
+            if (!isCreated.Succeeded) throw new IncorrectInputException("Login or password entered incorrectly");
 
-                var user = new User
-                {
-                    UserName = model.Login,
-                    Email = model.Login
-                };
-                var isCreated = await _userManager.CreateAsync(user, model.Password);
-
-                if (!isCreated.Succeeded)
-                {
-                    return new ResponseModel
-                    {
-                        Action = "Registration",
-                        Code = "400",
-                        Error = "Incorrect password"
-                    };
-                }
-
-                return new ResponseModel
-                {
-                    Action = "Registration",
-                    Code = "200"
-                };
-            }
-            catch (Exception)
+            return new ResponseDTO
             {
-                return new ResponseModel
-                {
-                    Action = "Registration",
-                    Code = "500",
-                    Error = "Internal server error"
-                };
-            }
+                Action = "Registration",
+                Code = "200"
+            };
         }
 
-        public async Task<ResponseModel> Refresh(string token)
+        public async Task<ResponseDTO> Refresh(string token)
         {
-            if (token == null) return new ResponseModel { Code = "400", Action = "Refresh", Error = "Empty token" };
+            if (token == null) throw new EmptyTokenException("refresh", "Empty token");
 
             var validatedToken = _tokenService.ValidateToken(token);
 
-            if (validatedToken == null) return new ResponseModel { Code = "400", Action = "Refresh", Error = "Outdated token" };
+            if (validatedToken == null) throw new OutdatedTokenException("refresh", "Outdated token");
 
             var user = await _accountRepository.GetByRefreshToken(token);
 
-            if (user == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty user" };
+            if (user == null) throw new EmptyUserException("Empty user");
 
             var accessToken = _tokenService.CreateAccessToken(user);
 
-            if (accessToken == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty access token" };
+            if (accessToken == null) throw new EmptyTokenException("access", "Empty token");
 
             user.AccessToken = accessToken;
 
             var refreshToken = _tokenService.CreateRefreshToken(user);
 
-            if (refreshToken == null) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Empty refresh token" };
+            if (refreshToken == null) throw new EmptyTokenException("refresh", "Empty token");
 
             user.RefreshToken = refreshToken;
 
             _accountRepository.Update(user);
             var result = _accountRepository.Save();
 
-            if (result == false) return new ResponseModel { Code = "500", Action = "Refresh", Error = "Can't save tokens in db" };
+            if (result == false) throw new SaveDbException("Can't save tokens in db");
 
-            return new ResponseModel
+            return new ResponseDTO
             {
                 Code = "200",
                 Action = "Refresh",

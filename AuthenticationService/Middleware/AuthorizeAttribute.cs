@@ -27,6 +27,7 @@ namespace AuthenticationService.Middleware
             catch (Exception)
             {
                 context.Result = new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized };
+                context.Result.ExecuteResultAsync(context);
             }
         }
     }

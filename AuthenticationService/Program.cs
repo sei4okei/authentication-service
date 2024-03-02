@@ -1,6 +1,7 @@
 using AuthenticationService.Data;
 using AuthenticationService.Helpers;
 using AuthenticationService.Middleware;
+using AuthenticationService.Migrations;
 using AuthenticationService.Models;
 using AuthenticationService.Repository;
 using AuthenticationService.Services;
@@ -14,9 +15,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddOptions();
@@ -26,11 +25,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(typeof(ServiceMappingProfile));
-
+var connectionString = builder.Configuration
+        .GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ServiceContext>(options =>
         options.UseNpgsql(builder.Configuration
         .GetConnectionString("DefaultConnection")));
-
+var optionsBuilder = new DbContextOptionsBuilder<ServiceContext>();
+var options = optionsBuilder.UseNpgsql(connectionString).Options;
 builder.Services.AddAuthentication(opt => {
     opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     opt.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -68,15 +69,19 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+using (ServiceContext db = new ServiceContext(options))
+{
+    await db.Database.MigrateAsync();
+}
+
 app.UseMiddleware<JwtMiddleware>();
-//app.UseHttpsRedirection();
+app.UseExceptionHandlerMiddleware();
 
 app.UseAuthentication();
 app.UseAuthorization();

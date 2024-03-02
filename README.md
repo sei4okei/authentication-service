@@ -23,14 +23,4 @@ docker build . -t authenticationservice
 ```cmd
 docker-compose up
 ```
-3.  Вставить строку подключения в appsettings.json
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "User ID=postgres;Password=postgres;Server=localhost;Port=5433;Database=Users;IntegratedSecurity=true;Pooling=true"
-},
-```
-4.  Применить миграцию через консоль диспетчера пакетов
-```cmd
-Update-Database
-```
-5. Всё готово!
+3. Всё готово!

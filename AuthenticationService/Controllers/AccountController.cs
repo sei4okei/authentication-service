@@ -13,67 +13,55 @@ namespace AuthenticationService.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
-        private readonly IMapper _mapper;
 
-        public AccountController(IAccountService accountService, IMapper mapper)
+        public AccountController(IAccountService accountService)
         {
             _accountService = accountService;
-            _mapper = mapper;
         }
 
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> Login(LoginDTO loginDTO)
+        public async Task<IActionResult> Login(LoginDTO loginRequest)
         {
-            var loginModel = _mapper.Map<LoginModel>(loginDTO);
+            var loginResponse = await _accountService.Login(loginRequest);
 
-            var result = await _accountService.Login(loginModel);
+            if (loginResponse.Error != null) return BadRequest(loginResponse);
 
-            var resultDTO = _mapper.Map<ResponseDTO>(result);
-
-            if (result.Error != null) return BadRequest(resultDTO);
-
-            return Ok(resultDTO);
+            return Ok(loginResponse);
         }
 
         [HttpPost]
         [Route("register")]
-        public async Task<IActionResult> Register(RegisterDTO registerDTO)
+        public async Task<IActionResult> Register(RegisterDTO registerRequest)
         {
-            var registerModel = _mapper.Map<RegisterModel>(registerDTO);
+            var registerResponse = await _accountService.Register(registerRequest);
 
-            var result = await _accountService.Register(registerModel);
+            if (registerResponse.Error != null) return BadRequest(registerResponse);
 
-            var resultDTO = _mapper.Map<ResponseDTO>(result);
-
-            if (result.Error != null) return BadRequest(resultDTO);
-
-            return Ok(resultDTO);
+            return Ok(registerResponse);
         }
 
         [HttpPost]
         [Route("refresh")]
-        public async Task<IActionResult> Refresh([FromHeader] string Refresh)
+        public async Task<IActionResult> Refresh([FromHeader(Name = "Refresh")] string refreshRequest)
         {
-            if (Refresh == null) return BadRequest(new ResponseModel { Action = "Refresh", Code = "400", Error = "Empty token" });
+            var refreshResponse = await _accountService.Refresh(refreshRequest);
 
-            var responseModel = await _accountService.Refresh(Refresh);
+            if (refreshResponse.Error != null) return BadRequest(refreshResponse);
 
-            if (responseModel.Error != null) return BadRequest(responseModel);
-
-            return Ok(responseModel);
+            return Ok(refreshResponse);
         }
 
         [HttpGet]
         [Route("status")]
         [Authorize]
-        public async Task<IActionResult> Status([FromHeader] string Authorization)
+        public IActionResult Status([FromHeader(Name = "Authorization")] string authorizationRequest)
         {
-            var status = _accountService.Status(Authorization);
+            var authorizationResponse = _accountService.Status(authorizationRequest);
 
-            if (status.Error != null) return BadRequest(status);
+            if (authorizationResponse.Error != null) return BadRequest(authorizationResponse);
 
-            return Ok(status);
+            return Ok(authorizationResponse);
         }
     }
 }
