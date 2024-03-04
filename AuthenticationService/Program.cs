@@ -1,11 +1,12 @@
-using AuthenticationService.Data;
-using AuthenticationService.Helpers;
-using AuthenticationService.Middleware;
-using AuthenticationService.Migrations;
-using AuthenticationService.Models;
-using AuthenticationService.Repository;
-using AuthenticationService.Services;
-using AuthenticationService.Services.Interfaces;
+using BusinessLogicLayer.Helpers;
+using BusinessLogicLayer.Interfaces;
+using BusinessLogicLayer.Middleware;
+using BusinessLogicLayer.Models;
+using BusinessLogicLayer.Services;
+using DataAccessLayer.Context;
+using DataAccessLayer.Interfaces;
+using DataAccessLayer.Models;
+using DataAccessLayer.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -32,7 +33,8 @@ builder.Services.AddDbContext<ServiceContext>(options =>
         .GetConnectionString("DefaultConnection")));
 var optionsBuilder = new DbContextOptionsBuilder<ServiceContext>();
 var options = optionsBuilder.UseNpgsql(connectionString).Options;
-builder.Services.AddAuthentication(opt => {
+builder.Services.AddAuthentication(opt =>
+{
     opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     opt.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;

@@ -3,7 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthenticationService", "AuthenticationService\AuthenticationService.csproj", "{6C3DB4B6-76A1-4FC8-9C8A-728C7C39815A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthenticationService", "AuthenticationService\AuthenticationService.csproj", "{6C3DB4B6-76A1-4FC8-9C8A-728C7C39815A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessLayer", "DataAccessLayer\DataAccessLayer.csproj", "{4E7D6163-7A89-4E79-9AC9-21071AACB641}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BusinessLogicLayer", "BusinessLogicLayer\BusinessLogicLayer.csproj", "{1C33FFF2-54B4-4FE5-9AF9-867074D5C57D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataTransferObject", "DataTransferObject\DataTransferObject.csproj", "{C6C5A7CD-1FE6-48D7-950E-28C36D279D17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{6C3DB4B6-76A1-4FC8-9C8A-728C7C39815A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C3DB4B6-76A1-4FC8-9C8A-728C7C39815A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C3DB4B6-76A1-4FC8-9C8A-728C7C39815A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E7D6163-7A89-4E79-9AC9-21071AACB641}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E7D6163-7A89-4E79-9AC9-21071AACB641}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E7D6163-7A89-4E79-9AC9-21071AACB641}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E7D6163-7A89-4E79-9AC9-21071AACB641}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C33FFF2-54B4-4FE5-9AF9-867074D5C57D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C33FFF2-54B4-4FE5-9AF9-867074D5C57D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C33FFF2-54B4-4FE5-9AF9-867074D5C57D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C33FFF2-54B4-4FE5-9AF9-867074D5C57D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6C5A7CD-1FE6-48D7-950E-28C36D279D17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6C5A7CD-1FE6-48D7-950E-28C36D279D17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6C5A7CD-1FE6-48D7-950E-28C36D279D17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6C5A7CD-1FE6-48D7-950E-28C36D279D17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,10 +1,7 @@
-﻿using AuthenticationService.Middleware;
-using AuthenticationService.Models;
-using AuthenticationService.Models.DTOs;
-using AuthenticationService.Services.Interfaces;
-using AutoMapper;
+﻿using BusinessLogicLayer.Interfaces;
+using BusinessLogicLayer.Middleware;
+using DataTransferObject;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace AuthenticationService.Controllers
 {
